@@ -364,6 +364,17 @@
   var CFG_KEY = 'traepet_cfg', TODO_KEY = 'traepet_todos'
 
   function loadStore() {
+    // 支持 URL 参数预填配置（分享体验用）：?base=...&model=...&key=...
+    try {
+      var q = new URLSearchParams(location.search)
+      var qb = q.get('base'), qm = q.get('model'), qk = q.get('key')
+      if (qb && qm && qk) {
+        cfg = { base: qb, model: qm, key: qk }
+        localStorage.setItem(CFG_KEY, JSON.stringify(cfg))
+        history.replaceState(null, '', location.pathname)
+        return
+      }
+    } catch (e) {}
     try {
       var c = JSON.parse(localStorage.getItem(CFG_KEY) || '{}')
       if (c.base) cfg = c
