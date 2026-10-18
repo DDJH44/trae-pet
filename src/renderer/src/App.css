@@ -1,0 +1,23 @@
+/* 全局：透明窗口根容器，禁止选中文本与滚动条 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  background: transparent;
+  overflow: hidden;
+  user-select: none;
+  font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+}
+
+.app {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}

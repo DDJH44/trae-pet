@@ -1,0 +1,397 @@
+/* 聊天面板：位于角色左侧，深色科技风 */
+.chat-panel {
+  position: absolute;
+  right: 148px;
+  bottom: 6px;
+  width: 320px;
+  height: 440px;
+  display: flex;
+  flex-direction: column;
+  background: rgba(15, 21, 18, 0.94);
+  border: 1px solid rgba(74, 222, 128, 0.28);
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  animation: panel-in 0.22s ease;
+  -webkit-app-region: no-drag; /* 面板区域可正常交互，不受角色拖动区影响 */
+  z-index: 1;
+}
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 顶部 */
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  background: rgba(74, 222, 128, 0.06);
+  border-bottom: 1px solid rgba(74, 222, 128, 0.15);
+}
+.chat-avatar {
+  width: 32px;
+  height: 32px;
+  flex: none;
+}
+.chat-title {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+.chat-title strong {
+  color: #e8f5ec;
+  font-size: 14px;
+}
+.chat-status {
+  font-size: 11px;
+  color: #6ee7a0;
+}
+.chat-status.status-thinking {
+  color: #fbbf24;
+}
+.chat-status.status-error {
+  color: #f87171;
+}
+.chat-close {
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #cfe8d8;
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+}
+.chat-close:hover {
+  background: rgba(74, 222, 128, 0.25);
+}
+
+/* 消息区 */
+.chat-messages {
+  flex: 1;
+  overflow-y: auto;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.chat-messages::-webkit-scrollbar {
+  width: 6px;
+}
+.chat-messages::-webkit-scrollbar-thumb {
+  background: rgba(74, 222, 128, 0.25);
+  border-radius: 3px;
+}
+
+.chat-empty {
+  margin: auto;
+  text-align: center;
+  color: #7a8c82;
+  font-size: 13px;
+  line-height: 1.9;
+}
+
+.chat-msg {
+  max-width: 82%;
+  padding: 8px 12px;
+  border-radius: 12px;
+  font-size: 13px;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+.from-user {
+  align-self: flex-end;
+  background: rgba(74, 222, 128, 0.18);
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  color: #eafbf0;
+  border-bottom-right-radius: 4px;
+}
+.from-ai {
+  align-self: flex-start;
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  color: #d7e5dc;
+  border-bottom-left-radius: 4px;
+}
+
+/* 思考中的三点动画 */
+.thinking-dots {
+  display: flex;
+  gap: 5px;
+  align-items: center;
+  padding: 12px 14px;
+}
+.thinking-dots span {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #4ade80;
+  animation: dot-jump 1s ease-in-out infinite;
+}
+.thinking-dots span:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.thinking-dots span:nth-child(3) {
+  animation-delay: 0.3s;
+}
+@keyframes dot-jump {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: translateY(0);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(-4px);
+  }
+}
+
+/* 错误提示 + 重试 */
+.chat-error {
+  align-self: stretch;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 10px;
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.35);
+  font-size: 12px;
+  color: #fca5a5;
+}
+.chat-error-text {
+  flex: 1;
+}
+.chat-retry {
+  border: none;
+  border-radius: 6px;
+  padding: 4px 10px;
+  background: rgba(248, 113, 113, 0.25);
+  color: #fecaca;
+  cursor: pointer;
+  font-size: 12px;
+}
+.chat-retry:hover {
+  background: rgba(248, 113, 113, 0.4);
+}
+
+/* 底部输入区 */
+.chat-footer {
+  display: flex;
+  gap: 8px;
+  padding: 10px;
+  border-top: 1px solid rgba(74, 222, 128, 0.15);
+  background: rgba(10, 15, 12, 0.6);
+}
+.chat-input {
+  flex: 1;
+  resize: none;
+  border: 1px solid rgba(74, 222, 128, 0.22);
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.35);
+  color: #e8f5ec;
+  font-size: 13px;
+  font-family: inherit;
+  line-height: 1.5;
+  padding: 8px 10px;
+  outline: none;
+}
+.chat-input:focus {
+  border-color: rgba(74, 222, 128, 0.55);
+}
+.chat-input::placeholder {
+  color: #64766c;
+}
+.chat-send {
+  align-self: flex-end;
+  border: none;
+  border-radius: 10px;
+  padding: 9px 16px;
+  background: linear-gradient(135deg, #34c168, #4ade80);
+  color: #06210f;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.chat-send:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+.chat-send:not(:disabled):hover {
+  filter: brightness(1.1);
+}
+
+/* ===== 待办入口按钮（面板头部） ===== */
+.chat-todo-btn {
+  position: relative;
+  width: 24px;
+  height: 24px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #cfe8d8;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.chat-todo-btn svg {
+  width: 14px;
+  height: 14px;
+}
+.chat-todo-btn:hover,
+.chat-todo-btn.active {
+  background: rgba(74, 222, 128, 0.25);
+  color: #4ade80;
+}
+.todo-badge {
+  position: absolute;
+  top: -5px;
+  right: -6px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  border-radius: 7px;
+  background: #4ade80;
+  color: #0b100e;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 14px;
+  text-align: center;
+}
+
+/* ===== 消息内待办确认卡片 ===== */
+.todo-card {
+  margin-top: 6px;
+  padding: 6px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  background: rgba(74, 222, 128, 0.1);
+  border: 1px solid rgba(74, 222, 128, 0.35);
+  color: #86efac;
+}
+.todo-card-done {
+  background: rgba(74, 222, 128, 0.06);
+}
+.todo-card-removed {
+  background: rgba(248, 113, 113, 0.08);
+  border-color: rgba(248, 113, 113, 0.3);
+  color: #fca5a5;
+}
+
+/* ===== 待办视图 ===== */
+.todo-view {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.todo-list {
+  flex: 1;
+  overflow-y: auto;
+  padding: 10px 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.todo-list::-webkit-scrollbar {
+  width: 6px;
+}
+.todo-list::-webkit-scrollbar-thumb {
+  background: rgba(74, 222, 128, 0.25);
+  border-radius: 3px;
+}
+.todo-empty {
+  margin: auto;
+  text-align: center;
+  color: #7a9486;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.todo-empty-hint {
+  font-size: 12px;
+  color: #5c7466;
+}
+.todo-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(74, 222, 128, 0.12);
+}
+.todo-item.done {
+  opacity: 0.55;
+}
+.todo-item.done .todo-title {
+  text-decoration: line-through;
+}
+.todo-check {
+  width: 16px;
+  height: 16px;
+  flex: none;
+  border: 1.6px solid #5c8a6e;
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+.todo-check:hover {
+  border-color: #4ade80;
+}
+.todo-check.checked {
+  background: #4ade80;
+  border-color: #4ade80;
+  box-shadow: 0 0 6px rgba(74, 222, 128, 0.6);
+}
+.todo-info {
+  flex: 1;
+  min-width: 0;
+}
+.todo-title {
+  font-size: 13px;
+  color: #e8f5ec;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.todo-time {
+  margin-top: 2px;
+  font-size: 11px;
+  color: #fbbf24;
+}
+.todo-del {
+  width: 20px;
+  height: 20px;
+  flex: none;
+  border: none;
+  border-radius: 5px;
+  background: transparent;
+  color: #5c7466;
+  font-size: 14px;
+  line-height: 1;
+  cursor: pointer;
+}
+.todo-del:hover {
+  background: rgba(248, 113, 113, 0.18);
+  color: #f87171;
+}
+.todo-divider {
+  margin: 6px 2px 2px;
+  font-size: 11px;
+  color: #5c7466;
+}

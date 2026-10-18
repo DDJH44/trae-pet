@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>TRAE 宝 · 在线体验</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    width: 100%; min-height: 100%;
+    background: radial-gradient(ellipse at 50% 20%, #101815 0%, #0a0f0d 55%, #070a09 100%);
+    color: #d7f5e3;
+    font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+    overflow-x: hidden;
+    user-select: none;
+  }
+  a { color: #4ade80; }
+
+  /* ===== 顶部说明 ===== */
+  .hero { text-align: center; padding: 48px 20px 24px; }
+  .hero h1 { font-size: 26px; letter-spacing: 1px; color: #e8f5ec; }
+  .hero h1 em { font-style: normal; color: #4ade80; }
+  .hero p { margin-top: 10px; font-size: 14px; color: #7a9486; line-height: 1.8; }
+  .hero .links { margin-top: 14px; font-size: 13px; }
+  .hero .links a { margin: 0 8px; text-decoration: none; border-bottom: 1px dashed rgba(74,222,128,.4); }
+  .hero .tip {
+    display: inline-block; margin-top: 18px; padding: 8px 14px;
+    border: 1px solid rgba(74,222,128,.25); border-radius: 10px;
+    background: rgba(74,222,128,.06); font-size: 13px; color: #86efac;
+  }
+
+  /* ===== 桌宠 ===== */
+  .pet-wrap {
+    position: fixed; right: 48px; bottom: 48px;
+    width: 138px; height: 166px; cursor: grab; z-index: 50;
+    display: flex; align-items: flex-end; justify-content: center;
+    touch-action: none;
+  }
+  .pet-wrap:active { cursor: grabbing; }
+  .pet-wrap.dragging .pet-float { animation: none; transform: rotate(-7deg) scale(1.05); }
+  .pet-float { animation: pet-float 2.6s ease-in-out infinite; will-change: transform; transition: transform .25s ease; }
+  @keyframes pet-float {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-5px) rotate(1.2deg); }
+  }
+  .pet-scale { transition: transform .32s cubic-bezier(.34,1.56,.64,1); transform-origin: 50% 100%; }
+  .pet-wrap:hover .pet-scale { transform: scale(1.1) translateY(-3px); }
+  .pet-wrap:active .pet-scale { transform: scale(1.12,.85); transition-duration: .08s; }
+  .pet-svg { display: block; width: 118px; height: auto; overflow: visible; animation: svg-idle 9s ease-in-out infinite; }
+  @keyframes svg-idle {
+    0%, 62%, 100% { transform: rotate(0); }
+    66% { transform: rotate(3deg); } 72% { transform: rotate(-2deg); } 78% { transform: rotate(0); }
+  }
+  .pet-shadow {
+    position: absolute; left: 50%; bottom: 1px; width: 88px; height: 12px;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,.38) 0%, transparent 70%);
+    animation: shadow-breathe 2.6s ease-in-out infinite; pointer-events: none;
+  }
+  @keyframes shadow-breathe {
+    0%, 100% { transform: translateX(-50%) scaleX(1); opacity: .8; }
+    50% { transform: translateX(-50%) scaleX(.8); opacity: .5; }
+  }
+  .eye {
+    filter: drop-shadow(0 0 5px rgba(74,222,128,.85));
+    transform-box: fill-box; transform-origin: center;
+    animation: eye-idle-blink 4.6s ease-in-out infinite;
+  }
+  @keyframes eye-idle-blink {
+    0%, 90% { transform: scaleY(1); } 92%, 94% { transform: scaleY(.06); } 96%, 100% { transform: scaleY(1); }
+  }
+  .antenna-ball { filter: drop-shadow(0 0 6px rgba(74,222,128,.9)); animation: antenna-glow 1.8s ease-in-out infinite; }
+  @keyframes antenna-glow { 0%, 100% { opacity: .7; } 50% { opacity: 1; } }
+  .chest-light { animation: antenna-glow 2.2s ease-in-out infinite; }
+  .pet-wrap[data-state="thinking"] .eye { animation: eye-blink .75s ease-in-out infinite; }
+  @keyframes eye-blink { 0%, 100% { opacity: 1; } 50% { opacity: .2; } }
+  .pet-wrap[data-state="thinking"] .pet-body {
+    transform-box: fill-box; transform-origin: center; animation: body-pulse 1.2s ease-in-out infinite;
+  }
+  @keyframes body-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.03); } }
+  .pet-wrap[data-state="speaking"] .eye {
+    filter: drop-shadow(0 0 11px rgba(74,222,128,1)); animation: eye-speak .6s ease-in-out infinite;
+  }
+  @keyframes eye-speak { 0%, 100% { transform: scaleY(1); } 50% { transform: scaleY(.72); } }
+  .pet-wrap[data-state="error"] .eye { fill: #f87171; filter: drop-shadow(0 0 6px rgba(248,113,113,.9)); animation: none; }
+  .pet-wrap[data-state="error"] .pet-scale { animation: pet-shake .4s ease-in-out 2; }
+  @keyframes pet-shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-3px); } 75% { transform: translateX(3px); } }
+
+  /* 气泡 */
+  .greeting-bubble, .reminder-bubble {
+    position: absolute; top: -10px; left: -6px; white-space: nowrap;
+    padding: 6px 10px; border-radius: 9px; font-size: 12px; z-index: 60;
+    animation: bubble-pop .38s cubic-bezier(.34,1.56,.64,1);
+  }
+  .greeting-bubble {
+    background: rgba(16,24,20,.95); border: 1px solid rgba(74,222,128,.35); color: #d7f5e3;
+  }
+  .reminder-bubble {
+    max-width: 220px; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
+    background: rgba(40,28,8,.96); border: 1px solid rgba(251,191,36,.55); color: #fde68a;
+    animation: bubble-pop .38s cubic-bezier(.34,1.56,.64,1), reminder-wiggle 1.6s ease-in-out 1s infinite;
+  }
+  .reminder-bubble:hover { border-color: rgba(251,191,36,.9); }
+  @keyframes reminder-wiggle { 0%, 88%, 100% { transform: rotate(0); } 92% { transform: rotate(2.5deg); } 96% { transform: rotate(-2deg); } }
+  @keyframes bubble-pop {
+    0% { opacity: 0; transform: scale(.4) translateY(4px); }
+    60% { opacity: 1; transform: scale(1.06); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+
+  /* ===== 聊天面板 ===== */
+  .chat-panel {
+    position: fixed; right: 196px; bottom: 54px;
+    width: 320px; max-width: calc(100vw - 24px); height: 440px; max-height: calc(100vh - 24px);
+    display: none; flex-direction: column; z-index: 40;
+    background: rgba(15,21,18,.96); border: 1px solid rgba(74,222,128,.28);
+    border-radius: 14px; box-shadow: 0 8px 32px rgba(0,0,0,.5); overflow: hidden;
+    animation: panel-in .22s ease;
+  }
+  .chat-panel.open { display: flex; }
+  @keyframes panel-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  .chat-header {
+    display: flex; align-items: center; gap: 10px; padding: 10px 12px;
+    background: rgba(74,222,128,.06); border-bottom: 1px solid rgba(74,222,128,.15);
+  }
+  .chat-title { flex: 1; display: flex; flex-direction: column; gap: 1px; }
+  .chat-title strong { color: #e8f5ec; font-size: 14px; }
+  .chat-status { font-size: 11px; color: #6ee7a0; }
+  .chat-status.st-thinking { color: #fbbf24; }
+  .chat-status.st-error { color: #f87171; }
+  .icon-btn {
+    position: relative; width: 24px; height: 24px; border: none; border-radius: 6px;
+    background: rgba(255,255,255,.08); color: #cfe8d8; cursor: pointer;
+    display: flex; align-items: center; justify-content: center; font-size: 14px; line-height: 1;
+  }
+  .icon-btn:hover, .icon-btn.active { background: rgba(74,222,128,.25); color: #4ade80; }
+  .todo-badge {
+    position: absolute; top: -5px; right: -6px; min-width: 14px; height: 14px; padding: 0 3px;
+    border-radius: 7px; background: #4ade80; color: #0b100e; font-size: 10px; font-weight: 700;
+    line-height: 14px; text-align: center;
+  }
+  .chat-messages { flex: 1; overflow-y: auto; padding: 12px; display: flex; flex-direction: column; gap: 8px; }
+  .chat-messages::-webkit-scrollbar { width: 6px; }
+  .chat-messages::-webkit-scrollbar-thumb { background: rgba(74,222,128,.25); border-radius: 3px; }
+  .chat-empty { margin: auto; text-align: center; color: #7a9486; font-size: 13px; display: flex; flex-direction: column; gap: 6px; }
+  .chat-msg { max-width: 82%; padding: 8px 12px; border-radius: 12px; font-size: 13px; line-height: 1.6; word-break: break-word; white-space: pre-wrap; }
+  .chat-msg.from-user { align-self: flex-end; background: rgba(34,87,58,.85); color: #eafbf0; border-bottom-right-radius: 4px; }
+  .chat-msg.from-ai { align-self: flex-start; background: rgba(255,255,255,.06); color: #dcefe3; border-bottom-left-radius: 4px; }
+  .thinking-dots { display: flex; gap: 4px; padding: 12px; }
+  .thinking-dots span { width: 6px; height: 6px; border-radius: 50%; background: #4ade80; animation: dot-jump 1s ease-in-out infinite; }
+  .thinking-dots span:nth-child(2) { animation-delay: .15s; }
+  .thinking-dots span:nth-child(3) { animation-delay: .3s; }
+  @keyframes dot-jump { 0%, 100% { transform: translateY(0); opacity: .5; } 50% { transform: translateY(-5px); opacity: 1; } }
+  .chat-error {
+    align-self: stretch; display: flex; align-items: center; gap: 8px;
+    padding: 8px 10px; border-radius: 10px; font-size: 12px;
+    background: rgba(248,113,113,.1); border: 1px solid rgba(248,113,113,.3); color: #fca5a5;
+  }
+  .chat-retry {
+    margin-left: auto; border: none; border-radius: 6px; padding: 4px 10px;
+    background: rgba(248,113,113,.2); color: #fecaca; font-size: 12px; cursor: pointer;
+  }
+  .chat-footer { display: flex; gap: 8px; padding: 10px; border-top: 1px solid rgba(74,222,128,.12); }
+  .chat-input {
+    flex: 1; resize: none; border: 1px solid rgba(74,222,128,.2); border-radius: 10px;
+    background: rgba(0,0,0,.35); color: #e8f5ec; font-size: 13px; font-family: inherit;
+    padding: 8px 10px; outline: none; line-height: 1.5;
+  }
+  .chat-input:focus { border-color: rgba(74,222,128,.55); }
+  .chat-send {
+    border: none; border-radius: 10px; padding: 0 16px; background: #4ade80; color: #0b100e;
+    font-size: 13px; font-weight: 600; cursor: pointer;
+  }
+  .chat-send:disabled { opacity: .45; cursor: default; }
+
+  /* ===== 待办视图 ===== */
+  .todo-view { flex: 1; display: none; flex-direction: column; overflow: hidden; }
+  .todo-view.show { display: flex; }
+  .chat-messages.hidden { display: none; }
+  .chat-footer.hidden { display: none; }
+  .todo-list { flex: 1; overflow-y: auto; padding: 10px 12px; display: flex; flex-direction: column; gap: 6px; }
+  .todo-list::-webkit-scrollbar { width: 6px; }
+  .todo-list::-webkit-scrollbar-thumb { background: rgba(74,222,128,.25); border-radius: 3px; }
+  .todo-empty { margin: auto; text-align: center; color: #7a9486; font-size: 13px; }
+  .todo-item {
+    display: flex; align-items: center; gap: 10px; padding: 9px 10px; border-radius: 10px;
+    background: rgba(255,255,255,.04); border: 1px solid rgba(74,222,128,.12);
+  }
+  .todo-item.done { opacity: .55; }
+  .todo-item.done .todo-title { text-decoration: line-through; }
+  .todo-check {
+    width: 16px; height: 16px; flex: none; border: 1.6px solid #5c8a6e; border-radius: 50%;
+    background: transparent; cursor: pointer; transition: all .15s ease;
+  }
+  .todo-check:hover { border-color: #4ade80; }
+  .todo-check.checked { background: #4ade80; border-color: #4ade80; box-shadow: 0 0 6px rgba(74,222,128,.6); }
+  .todo-info { flex: 1; min-width: 0; }
+  .todo-title { font-size: 13px; color: #e8f5ec; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .todo-time { margin-top: 2px; font-size: 11px; color: #fbbf24; }
+  .todo-del {
+    width: 20px; height: 20px; flex: none; border: none; border-radius: 5px;
+    background: transparent; color: #5c7466; font-size: 14px; line-height: 1; cursor: pointer;
+  }
+  .todo-del:hover { background: rgba(248,113,113,.18); color: #f87171; }
+  .todo-divider { margin: 6px 2px 2px; font-size: 11px; color: #5c7466; }
+  .todo-add { display: flex; gap: 6px; padding: 10px; border-top: 1px solid rgba(74,222,128,.12); }
+  .todo-add input[type="text"] {
+    flex: 1; min-width: 0; border: 1px solid rgba(74,222,128,.2); border-radius: 8px;
+    background: rgba(0,0,0,.35); color: #e8f5ec; font-size: 12px; padding: 6px 9px; outline: none; font-family: inherit;
+  }
+  .todo-add input[type="datetime-local"] {
+    border: 1px solid rgba(74,222,128,.2); border-radius: 8px; background: rgba(0,0,0,.35);
+    color: #e8f5ec; font-size: 11px; padding: 6px; outline: none; font-family: inherit; color-scheme: dark;
+  }
+  .todo-add button {
+    border: none; border-radius: 8px; padding: 6px 12px; background: rgba(74,222,128,.18);
+    color: #4ade80; font-size: 12px; cursor: pointer; font-weight: 600;
+  }
+
+  /* ===== 设置弹层 ===== */
+  .modal-mask {
+    position: fixed; inset: 0; background: rgba(0,0,0,.6); z-index: 100;
+    display: none; align-items: center; justify-content: center;
+  }
+  .modal-mask.show { display: flex; }
+  .modal {
+    width: 360px; max-width: calc(100vw - 32px); border-radius: 14px;
+    background: #101714; border: 1px solid rgba(74,222,128,.3); padding: 20px;
+  }
+  .modal h3 { font-size: 15px; color: #e8f5ec; margin-bottom: 4px; }
+  .modal .sub { font-size: 12px; color: #7a9486; margin-bottom: 14px; line-height: 1.6; }
+  .modal label { display: block; font-size: 12px; color: #86efac; margin: 10px 0 4px; }
+  .modal input {
+    width: 100%; border: 1px solid rgba(74,222,128,.25); border-radius: 8px;
+    background: rgba(0,0,0,.4); color: #e8f5ec; font-size: 13px; padding: 8px 10px;
+    outline: none; font-family: inherit;
+  }
+  .modal input:focus { border-color: rgba(74,222,128,.6); }
+  .modal-btns { display: flex; gap: 10px; margin-top: 16px; justify-content: flex-end; }
+  .modal-btns button {
+    border: none; border-radius: 8px; padding: 8px 18px; font-size: 13px; cursor: pointer;
+  }
+  .btn-ghost { background: rgba(255,255,255,.08); color: #cfe8d8; }
+  .btn-primary { background: #4ade80; color: #0b100e; font-weight: 600; }
+
+  footer.page { text-align: center; padding: 26px 0 200px; font-size: 12px; color: #3f5548; }
+</style>
+</head>
+<body>
+  <div class="hero">
+    <h1><em>TRAE 宝</em> · 桌面 AI 精灵 · 在线体验</h1>
+    <p>单击它对话 · 按住拖动 · 点 📋 管理待办<br/>AI 对话需在 ⚙ 设置里填入自己的 OpenAI 兼容 API 配置（仅存本地浏览器）</p>
+    <div class="links">
+      <a href="https://github.com/DDJH44/trae-pet" target="_blank">GitHub 仓库</a>
+    </div>
+    <br/><span class="tip">💡 待办功能无需配置即可体验：添加一条带时间的待办，到点它会冒气泡提醒你</span>
+  </div>
+  <footer class="page">Web 版为功能演示 · 完整桌面版（Windows 置顶悬浮、系统通知）见仓库 README</footer>
+
+  <!-- 桌宠 -->
+  <div class="pet-wrap" id="pet" data-state="idle" title="单击对话，拖动移动">
+    <div class="bubble-slot" id="bubbleSlot"></div>
+    <div class="pet-float">
+      <div class="pet-scale">
+        <svg class="pet-svg" viewBox="0 0 200 240" aria-label="TRAE 宝">
+          <line x1="100" y1="12" x2="100" y2="32" stroke="#3D4A44" stroke-width="4" stroke-linecap="round"/>
+          <circle class="antenna-ball" cx="100" cy="10" r="5" fill="#4ADE80"/>
+          <rect x="30" y="30" width="140" height="104" rx="16" fill="#263129" stroke="#3E4E45" stroke-width="2"/>
+          <rect x="42" y="42" width="116" height="80" rx="9" fill="#0B100E"/>
+          <polygon class="eye eye-left" points="85,71 96,82 85,93 74,82" fill="#4ADE80"/>
+          <polygon class="eye eye-right" points="115,71 126,82 115,93 104,82" fill="#4ADE80"/>
+          <rect class="pet-body" x="62" y="140" width="76" height="54" rx="12" fill="#1C2521" stroke="#2E3A34" stroke-width="2"/>
+          <rect class="chest-light" x="88" y="156" width="24" height="7" rx="3.5" fill="#4ADE80" opacity="0.85"/>
+          <rect x="44" y="146" width="13" height="34" rx="6.5" fill="#1C2521" stroke="#2E3A34" stroke-width="2"/>
+          <rect x="143" y="146" width="13" height="34" rx="6.5" fill="#1C2521" stroke="#2E3A34" stroke-width="2"/>
+          <g><rect x="159" y="172" width="16" height="14" rx="3" fill="#F5F5F0"/><rect x="156" y="169" width="22" height="5" rx="2.5" fill="#8B6F52"/></g>
+        </svg>
+      </div>
+    </div>
+    <div class="pet-shadow"></div>
+  </div>
+
+  <!-- 面板 -->
+  <div class="chat-panel" id="panel">
+    <header class="chat-header">
+      <svg width="32" height="32" viewBox="0 0 40 40" aria-hidden="true">
+        <rect x="4" y="6" width="32" height="24" rx="5" fill="#263129" stroke="#3E4E45" stroke-width="1.5"/>
+        <rect x="8" y="10" width="24" height="16" rx="3" fill="#0B100E"/>
+        <polygon points="17,13 21,17 17,21 13,17" fill="#4ADE80"/>
+        <polygon points="27,13 31,17 27,21 23,17" fill="#4ADE80"/>
+      </svg>
+      <div class="chat-title">
+        <strong id="panelTitle">TRAE 宝</strong>
+        <span class="chat-status" id="statusText">在线</span>
+      </div>
+      <button class="icon-btn" id="btnTodo" title="待办事项">
+        <svg viewBox="0 0 20 20" width="14" height="14" aria-hidden="true">
+          <rect x="3" y="3" width="14" height="14" rx="3" fill="none" stroke="currentColor" stroke-width="1.6"/>
+          <path d="M6.5 10l2.2 2.2L14 7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        <span class="todo-badge" id="todoBadge" style="display:none">0</span>
+      </button>
+      <button class="icon-btn" id="btnSettings" title="API 设置">⚙</button>
+      <button class="icon-btn" id="btnClose" title="收起">−</button>
+    </header>
+
+    <div class="chat-messages" id="messages">
+      <div class="chat-empty">
+        <p>你好，我是 TRAE 宝（Web 版）。</p>
+        <p>在下方输入问题，Enter 发送。</p>
+        <p style="font-size:12px;color:#5c7466">AI 对话前先点右上角 ⚙ 填入 API 配置</p>
+      </div>
+    </div>
+
+    <div class="todo-view" id="todoView">
+      <div class="todo-list" id="todoList"></div>
+      <div class="todo-add">
+        <input type="text" id="todoTitle" placeholder="要做什么？" maxlength="60"/>
+        <input type="datetime-local" id="todoTime" title="提醒时间（可选）"/>
+        <button id="todoAddBtn">添加</button>
+      </div>
+    </div>
+
+    <footer class="chat-footer" id="chatFooter">
+      <textarea class="chat-input" id="input" rows="2" placeholder="输入问题，Enter 发送，Shift+Enter 换行"></textarea>
+      <button class="chat-send" id="sendBtn" disabled>发送</button>
+    </footer>
+  </div>
+
+  <!-- 设置弹层 -->
+  <div class="modal-mask" id="settingsMask">
+    <div class="modal">
+      <h3>AI 接口配置</h3>
+      <p class="sub">OpenAI 兼容格式。配置只保存在你当前浏览器的 localStorage，不会上传。<br/>若接口不支持浏览器跨域（CORS），对话将不可用，但待办功能不受影响。</p>
+      <label>Base URL（如 https://api.example.com/v1）</label>
+      <input type="text" id="cfgBase" placeholder="https://api.example.com/v1"/>
+      <label>模型名（如 gpt-4o-mini / deepseek-chat）</label>
+      <input type="text" id="cfgModel" placeholder="model-name"/>
+      <label>API Key</label>
+      <input type="password" id="cfgKey" placeholder="sk-..."/>
+      <div class="modal-btns">
+        <button class="btn-ghost" id="cfgCancel">取消</button>
+        <button class="btn-primary" id="cfgSave">保存</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function () {
+  'use strict'
+  var $ = function (id) { return document.getElementById(id) }
+  var pet = $('pet'), panel = $('panel'), messagesEl = $('messages'), inputEl = $('input')
+  var sendBtn = $('sendBtn'), statusText = $('statusText'), bubbleSlot = $('bubbleSlot')
+
+  // ---------- 状态 ----------
+  var state = 'idle'          // idle | thinking | speaking | error
+  var panelOpen = false
+  var view = 'chat'           // chat | todo
+  var messages = []           // {role, content}
+  var todos = []              // {id,title,remindAt,done,notified,createdAt}
+  var nextId = 1
+  var reminder = null
+  var greetTimer = null, greetHide = null
+
+  var CFG_KEY = 'traepet_cfg', TODO_KEY = 'traepet_todos'
+
+  function loadStore() {
+    try {
+      var c = JSON.parse(localStorage.getItem(CFG_KEY) || '{}')
+      if (c.base) cfg = c
+    } catch (e) {}
+    try {
+      var t = JSON.parse(localStorage.getItem(TODO_KEY) || '[]')
+      if (Array.isArray(t)) {
+        todos = t
+        nextId = todos.reduce(function (m, x) { return Math.max(m, x.id) }, 0) + 1
+      }
+    } catch (e) {}
+  }
+  function saveTodos() {
+    localStorage.setItem(TODO_KEY, JSON.stringify(todos))
+  }
+  var cfg = { base: '', model: '', key: '' }
+
+  function setState(s) {
+    state = s
+    pet.setAttribute('data-state', s)
+    var map = { idle: '在线', thinking: '正在思考…', speaking: '回复中', error: '出了点问题' }
+    statusText.textContent = map[s]
+    statusText.className = 'chat-status' + (s === 'idle' ? '' : ' st-' + s)
+  }
+
+  // ---------- 面板开关与视图 ----------
+  function setPanel(open) {
+    panelOpen = open
+    panel.classList.toggle('open', open)
+    if (open) { setView(view); if (view === 'chat') inputEl.focus() }
+  }
+  function setView(v) {
+    view = v
+    $('panelTitle').textContent = v === 'chat' ? 'TRAE 宝' : '我的待办'
+    $('todoView').classList.toggle('show', v === 'todo')
+    messagesEl.classList.toggle('hidden', v === 'todo')
+    $('chatFooter').classList.toggle('hidden', v === 'todo')
+    $('btnTodo').classList.toggle('active', v === 'todo')
+    if (v === 'chat') inputEl.focus()
+  }
+  function openTodoView() {
+    clearReminder()
+    setPanel(true)
+    setView('todo')
+  }
+
+  // ---------- 桌宠：点击 / 拖动 ----------
+  var drag = null
+  pet.addEventListener('mousedown', function (e) {
+    if (e.button !== 0) return
+    drag = { sx: e.screenX, sy: e.screenY, lx: e.screenX, ly: e.screenY, moved: false }
+    e.preventDefault()
+  })
+  document.addEventListener('mousemove', function (e) {
+    if (!drag) return
+    if (!drag.moved && Math.hypot(e.screenX - drag.sx, e.screenY - drag.sy) > 4) {
+      drag.moved = true
+      pet.classList.add('dragging')
+    }
+    if (drag.moved) {
+      var dx = e.screenX - drag.lx, dy = e.screenY - drag.ly
+      drag.lx = e.screenX; drag.ly = e.screenY
+      var r = pet.getBoundingClientRect()
+      var nx = Math.min(Math.max(0, r.left + dx), window.innerWidth - r.width)
+      var ny = Math.min(Math.max(0, r.top + dy), window.innerHeight - r.height)
+      pet.style.left = nx + 'px'
+      pet.style.top = ny + 'px'
+      pet.style.right = 'auto'
+      pet.style.bottom = 'auto'
+      // 面板跟随
+      pr = panel.getBoundingClientRect()
+      panel.style.right = 'auto'; panel.style.bottom = 'auto'
+      panel.style.left = Math.min(Math.max(8, nx - panel.offsetWidth - 10), window.innerWidth - panel.offsetWidth - 8) + 'px'
+      panel.style.top = Math.min(Math.max(8, ny + r.height - panel.offsetHeight), window.innerHeight - panel.offsetHeight - 8) + 'px'
+    }
+  })
+  document.addEventListener('mouseup', function () {
+    if (!drag) return
+    var wasClick = !drag.moved
+    drag = null
+    pet.classList.remove('dragging')
+    if (wasClick) setPanel(!panelOpen)
+  })
+  var pr = null
+
+  // ---------- 气泡 ----------
+  var GREETINGS = ['嗨，需要帮忙吗？', '想到什么就问我～', '今天代码顺利吗？', '我在待机，随时叫我。',
+    '有 bug 就拿来吧！', '在呢在呢～', '要不要听个冷笑话？', '盯屏幕久了，看看远处吧。']
+  function showBubble(html, cls, onClick) {
+    bubbleSlot.innerHTML = ''
+    var b = document.createElement('div')
+    b.className = cls
+    b.textContent = html
+    if (onClick) {
+      b.style.cursor = 'pointer'
+      b.addEventListener('mousedown', function (e) { e.stopPropagation() })
+      b.addEventListener('click', function (e) { e.stopPropagation(); onClick() })
+    }
+    bubbleSlot.appendChild(b)
+    return b
+  }
+  function clearGreeting() {
+    if (bubbleSlot.querySelector('.greeting-bubble')) bubbleSlot.innerHTML = ''
+    if (greetHide) clearTimeout(greetHide)
+    if (greetTimer) clearTimeout(greetTimer)
+    scheduleGreeting()
+  }
+  function scheduleGreeting() {
+    greetTimer = setTimeout(function () {
+      if (!panelOpen && !reminder) {
+        showBubble(GREETINGS[Math.floor(Math.random() * GREETINGS.length)], 'greeting-bubble')
+        greetHide = setTimeout(function () {
+          if (bubbleSlot.querySelector('.greeting-bubble')) bubbleSlot.innerHTML = ''
+        }, 5000)
+      }
+      scheduleGreeting()
+    }, 12000 + Math.random() * 18000)
+  }
+  scheduleGreeting()
+
+  function clearReminder() {
+    reminder = null
+    if (bubbleSlot.querySelector('.reminder-bubble')) bubbleSlot.innerHTML = ''
+  }
+
+  // ---------- 聊天 ----------
+  function addMsgEl(role, content) {
+    var empty = messagesEl.querySelector('.chat-empty')
+    if (empty) empty.remove()
+    var dots = messagesEl.querySelector('.thinking-dots')
+    if (dots) dots.remove()
+    var d = document.createElement('div')
+    d.className = 'chat-msg ' + (role === 'user' ? 'from-user' : 'from-ai')
+    d.textContent = content
+    messagesEl.appendChild(d)
+    messagesEl.scrollTop = messagesEl.scrollHeight
+    return d
+  }
+  function showThinking() {
+    var d = document.createElement('div')
+    d.className = 'chat-msg from-ai thinking-dots'
+    d.innerHTML = '<span></span><span></span><span></span>'
+    messagesEl.appendChild(d)
+    messagesEl.scrollTop = messagesEl.scrollHeight
+  }
+  function showError(err) {
+    var old = messagesEl.querySelector('.chat-error')
+    if (old) old.remove()
+    var dots = messagesEl.querySelector('.thinking-dots')
+    if (dots) dots.remove()
+    var d = document.createElement('div')
+    d.className = 'chat-error'
+    d.innerHTML = '<span class="err-text"></span><button class="chat-retry">重试</button>'
+    d.querySelector('.err-text').textContent = err
+    d.querySelector('.chat-retry').addEventListener('click', function () {
+      d.remove(); send(true)
+    })
+    messagesEl.appendChild(d)
+    messagesEl.scrollTop = messagesEl.scrollHeight
+  }
+
+  var lastInput = ''
+  function send(isRetry) {
+    var text = inputEl.value.trim()
+    if (isRetry) text = lastInput
+    if (!text || state === 'thinking') return
+    if (!cfg.base || !cfg.key || !cfg.model) {
+      openSettings()
+      return
+    }
+    lastInput = text
+    inputEl.value = ''
+    updateSendBtn()
+    messages.push({ role: 'user', content: text })
+    addMsgEl('user', text)
+    setState('thinking')
+    showThinking()
+
+    var ctrl = new AbortController()
+    var timer = setTimeout(function () { ctrl.abort() }, 30000)
+    fetch(cfg.base.replace(/\/+$/, '') + '/chat/completions', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + cfg.key },
+      body: JSON.stringify({
+        model: cfg.model,
+        messages: [{ role: 'system', content: '你是 TRAE 宝，一个友好、简洁的桌面 AI 伙伴。请用中文回答，语气亲切自然，回答尽量精炼。' }]
+          .concat(messages.slice(-20)),
+        temperature: 0.7,
+        max_tokens: 1024
+      }),
+      signal: ctrl.signal
+    }).then(function (res) {
+      clearTimeout(timer)
+      if (res.status === 401 || res.status === 403) throw new Error('API 鉴权失败，请检查 Key 是否正确')
+      if (res.status === 429) throw new Error('请求频率受限，请稍后再试')
+      if (!res.ok) throw new Error('服务返回异常（HTTP ' + res.status + '）')
+      return res.json()
+    }).then(function (data) {
+      var reply = data && data.choices && data.choices[0] && data.choices[0].message && data.choices[0].message.content
+      if (typeof reply !== 'string' || !reply.trim()) throw new Error('没有获取到有效回复，请重试')
+      messages.push({ role: 'assistant', content: reply })
+      addMsgEl('assistant', reply)
+      setState('speaking')
+      setTimeout(function () { if (state === 'speaking') setState('idle') }, 2500)
+    }).catch(function (err) {
+      clearTimeout(timer)
+      var msg = (err && err.name === 'AbortError') ? '本次响应超时，可以重试'
+        : (err && err.message) ? err.message
+        : '无法连接服务，可能是网络问题或该接口不支持浏览器跨域（CORS）'
+      showError(msg)
+      setState('error')
+    })
+  }
+  function updateSendBtn() {
+    sendBtn.disabled = state === 'thinking' || inputEl.value.trim().length === 0
+  }
+  inputEl.addEventListener('input', updateSendBtn)
+  inputEl.addEventListener('keydown', function (e) {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send(false) }
+  })
+  sendBtn.addEventListener('click', function () { send(false) })
+
+  // ---------- 待办 ----------
+  function fmtRemind(iso) {
+    if (!iso) return ''
+    var d = new Date(iso)
+    if (isNaN(d.getTime())) return ''
+    var pad = function (n) { return (n < 10 ? '0' : '') + n }
+    var today = new Date()
+    var hm = pad(d.getHours()) + ':' + pad(d.getMinutes())
+    if (d.toDateString() === today.toDateString()) return '今天 ' + hm
+    var t2 = new Date(today); t2.setDate(today.getDate() + 1)
+    if (d.toDateString() === t2.toDateString()) return '明天 ' + hm
+    return pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + hm
+  }
+  function renderTodos() {
+    var list = $('todoList')
+    list.innerHTML = ''
+    var pending = todos.filter(function (t) { return !t.done })
+    var done = todos.filter(function (t) { return t.done })
+    if (todos.length === 0) {
+      var e = document.createElement('div')
+      e.className = 'todo-empty'
+      e.textContent = '还没有待办事项，在下方添加一条吧'
+      list.appendChild(e)
+    }
+    function addItem(t) {
+      var d = document.createElement('div')
+      d.className = 'todo-item' + (t.done ? ' done' : '')
+      d.innerHTML = '<button class="todo-check' + (t.done ? ' checked' : '') + '" title="完成/取消"></button>' +
+        '<div class="todo-info"><div class="todo-title"></div>' +
+        (t.remindAt ? '<div class="todo-time">⏰ ' + fmtRemind(t.remindAt) + '</div>' : '<div></div>') + '</div>' +
+        '<button class="todo-del" title="删除">×</button>'
+      d.querySelector('.todo-title').textContent = t.title
+      d.querySelector('.todo-check').addEventListener('click', function () {
+        t.done = !t.done; saveTodos(); renderTodos()
+      })
+      d.querySelector('.todo-del').addEventListener('click', function () {
+        todos = todos.filter(function (x) { return x.id !== t.id })
+        saveTodos(); renderTodos()
+      })
+      list.appendChild(d)
+    }
+    pending.forEach(addItem)
+    if (done.length > 0) {
+      var dv = document.createElement('div')
+      dv.className = 'todo-divider'
+      dv.textContent = '已完成'
+      list.appendChild(dv)
+      done.forEach(addItem)
+    }
+    var badge = $('todoBadge')
+    badge.style.display = pending.length > 0 ? '' : 'none'
+    badge.textContent = pending.length
+  }
+  function addTodo() {
+    var title = $('todoTitle').value.trim()
+    if (!title) { $('todoTitle').focus(); return }
+    var tv = $('todoTime').value
+    var remindAt = tv ? new Date(tv).toISOString() : null
+    todos.push({ id: nextId++, title: title, remindAt: remindAt, done: false, notified: false, createdAt: new Date().toISOString() })
+    saveTodos()
+    $('todoTitle').value = ''; $('todoTime').value = ''
+    renderTodos()
+    $('todoTitle').focus()
+  }
+  $('todoAddBtn').addEventListener('click', addTodo)
+  $('todoTitle').addEventListener('keydown', function (e) { if (e.key === 'Enter') addTodo() })
+
+  // 到期检查（20s 一轮）
+  function checkReminders() {
+    var now = Date.now()
+    var due = todos.filter(function (t) {
+      return !t.done && !t.notified && t.remindAt && new Date(t.remindAt).getTime() <= now
+    })
+    if (due.length === 0) return
+    due.forEach(function (t) { t.notified = true })
+    saveTodos()
+    var t = due[due.length - 1]
+    reminder = { id: t.id, title: t.title }
+    showBubble('⏰ ' + t.title, 'reminder-bubble', openTodoView)
+    if ('Notification' in window && Notification.permission === 'granted') {
+      new Notification('⏰ TRAE 宝提醒', { body: t.title })
+    } else if ('Notification' in window && Notification.permission === 'default') {
+      Notification.requestPermission()
+    }
+  }
+  setInterval(checkReminders, 20000)
+
+  // ---------- 设置 ----------
+  function openSettings() {
+    $('cfgBase').value = cfg.base || ''
+    $('cfgModel').value = cfg.model || ''
+    $('cfgKey').value = cfg.key || ''
+    $('settingsMask').classList.add('show')
+  }
+  $('btnSettings').addEventListener('click', openSettings)
+  $('cfgCancel').addEventListener('click', function () { $('settingsMask').classList.remove('show') })
+  $('cfgSave').addEventListener('click', function () {
+    cfg = { base: $('cfgBase').value.trim(), model: $('cfgModel').value.trim(), key: $('cfgKey').value.trim() }
+    localStorage.setItem(CFG_KEY, JSON.stringify(cfg))
+    $('settingsMask').classList.remove('show')
+  })
+  $('settingsMask').addEventListener('click', function (e) {
+    if (e.target === $('settingsMask')) $('settingsMask').classList.remove('show')
+  })
+
+  // ---------- 面板按钮 ----------
+  $('btnTodo').addEventListener('click', function () { setView(view === 'chat' ? 'todo' : 'chat') })
+  $('btnClose').addEventListener('click', function () { setPanel(false) })
+
+  // ---------- 启动 ----------
+  loadStore()
+  renderTodos()
+  setState('idle')
+  checkReminders()
+})()
+</script>
+</body>
+</html>
