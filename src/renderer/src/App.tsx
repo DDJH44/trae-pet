@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import Pet from './components/Pet/Pet'
 import ChatPanel from './components/ChatPanel/ChatPanel'
 import { useChat } from './hooks/useChat'
+import { playReminderChime } from './utils/sound'
 import type { PanelView, Todo } from './types'
 
 export default function App() {
@@ -29,6 +30,28 @@ export default function App() {
     onTodoShow: openTodoView,
     onTodoChanged: refreshTodos
   })
+
+  const reminderRef = useRef(reminder)
+  reminderRef.current = reminder
+
+  // 到期提醒：立即响铃 + 未查看时每 30 秒重复（最多 3 次）
+  useEffect(() => {
+    if (!reminder) return
+    playReminderChime()
+    let count = 0
+    const timer = setInterval(() => {
+      if (!reminderRef.current) {
+        clearInterval(timer)
+        return
+      }
+      if (++count >= 3) {
+        clearInterval(timer)
+        return
+      }
+      playReminderChime()
+    }, 30_000)
+    return () => clearInterval(timer)
+  }, [reminder])
 
   const togglePanel = useCallback(() => {
     setPanelOpen((prev) => {
@@ -81,6 +104,7 @@ export default function App() {
           todos={todos}
           onTodoToggle={handleToggleTodo}
           onTodoRemove={handleRemoveTodo}
+          reminderActive={reminder !== null}
         />
       )}
       <Pet

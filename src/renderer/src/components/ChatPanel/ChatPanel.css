@@ -270,6 +270,20 @@
   line-height: 14px;
   text-align: center;
 }
+/* 有未查看的到期提醒：角标跳动放大 */
+.todo-badge.alert {
+  background: #fbbf24;
+  animation: badge-bounce 0.7s ease-in-out infinite;
+}
+@keyframes badge-bounce {
+  0%,
+  100% {
+    transform: translateY(0) scale(1);
+  }
+  50% {
+    transform: translateY(-4px) scale(1.25);
+  }
+}
 
 /* ===== 消息内待办确认卡片 ===== */
 .todo-card {

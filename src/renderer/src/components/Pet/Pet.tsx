@@ -110,6 +110,7 @@ export default function Pet({ state, panelOpen, onClick, reminder, onReminderCli
     <div
       className={`pet-wrap${dragging ? ' dragging' : ''}`}
       data-state={state}
+      data-reminder={reminder ? 'on' : undefined}
       onMouseDown={handleMouseDown}
       onContextMenu={(e) => {
         e.preventDefault()

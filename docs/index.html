@@ -95,17 +95,28 @@
     background: rgba(16,24,20,.95); border: 1px solid rgba(74,222,128,.35); color: #d7f5e3;
   }
   .reminder-bubble {
-    max-width: 220px; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
-    background: rgba(40,28,8,.96); border: 1px solid rgba(251,191,36,.55); color: #fde68a;
-    animation: bubble-pop .38s cubic-bezier(.34,1.56,.64,1), reminder-wiggle 1.6s ease-in-out 1s infinite;
+    top: -12px; left: -8px; max-width: 220px; overflow: hidden; text-overflow: ellipsis; cursor: pointer;
+    font-size: 14px; font-weight: 600; padding: 8px 12px; border-radius: 10px;
+    background: linear-gradient(135deg, rgba(60,42,10,.97), rgba(45,30,6,.97));
+    border: 1.5px solid rgba(251,191,36,.75); color: #fef3c7;
+    box-shadow: 0 0 18px rgba(251,191,36,.45), 0 0 42px rgba(251,191,36,.18), 0 4px 14px rgba(0,0,0,.4);
+    animation: bubble-pop .38s cubic-bezier(.34,1.56,.64,1), reminder-pulse 1.1s ease-in-out .5s infinite;
   }
-  .reminder-bubble:hover { border-color: rgba(251,191,36,.9); }
-  @keyframes reminder-wiggle { 0%, 88%, 100% { transform: rotate(0); } 92% { transform: rotate(2.5deg); } 96% { transform: rotate(-2deg); } }
+  .reminder-bubble:hover { border-color: rgba(251,191,36,1); }
+  @keyframes reminder-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.07); } }
   @keyframes bubble-pop {
     0% { opacity: 0; transform: scale(.4) translateY(4px); }
     60% { opacity: 1; transform: scale(1.06); }
     100% { opacity: 1; transform: scale(1); }
   }
+  /* 提醒姿态：眼变琥珀 + 天线急闪 */
+  .pet-wrap[data-reminder="on"] .eye { fill: #fbbf24; filter: drop-shadow(0 0 8px rgba(251,191,36,.95)); }
+  .pet-wrap[data-reminder="on"] .antenna-ball { filter: drop-shadow(0 0 9px rgba(251,191,36,.95)); animation: antenna-glow .45s ease-in-out infinite; }
+  .pet-wrap[data-reminder="on"] .chest-light { fill: #fbbf24; animation: antenna-glow .6s ease-in-out infinite; }
+  .pet-wrap[data-state="error"] .eye { fill: #f87171 !important; filter: drop-shadow(0 0 6px rgba(248,113,113,.9)) !important; }
+  /* 角标提醒跳动 */
+  .todo-badge.alert { background: #fbbf24; animation: badge-bounce .7s ease-in-out infinite; }
+  @keyframes badge-bounce { 0%, 100% { transform: translateY(0) scale(1); } 50% { transform: translateY(-4px) scale(1.25); } }
 
   /* ===== 聊天面板 ===== */
   .chat-panel {
@@ -359,6 +370,7 @@
   var todos = []              // {id,title,remindAt,done,notified,createdAt}
   var nextId = 1
   var reminder = null
+  var repeatTimer = null
   var greetTimer = null, greetHide = null
 
   var CFG_KEY = 'traepet_cfg', TODO_KEY = 'traepet_todos'
@@ -497,7 +509,39 @@
 
   function clearReminder() {
     reminder = null
+    pet.removeAttribute('data-reminder')
+    if (repeatTimer) { clearInterval(repeatTimer); repeatTimer = null }
+    updateBadge()
     if (bubbleSlot.querySelector('.reminder-bubble')) bubbleSlot.innerHTML = ''
+  }
+
+  // ---------- 提示音（Web Audio 合成「叮-咚」） ----------
+  var chimeCtx = null
+  function playChime() {
+    try {
+      if (!chimeCtx) chimeCtx = new (window.AudioContext || window.webkitAudioContext)()
+      if (chimeCtx.state === 'suspended') chimeCtx.resume()
+      function note(freq, start, dur) {
+        var o = chimeCtx.createOscillator(), g = chimeCtx.createGain()
+        o.type = 'sine'; o.frequency.value = freq
+        o.connect(g); g.connect(chimeCtx.destination)
+        var t = chimeCtx.currentTime + start
+        g.gain.setValueAtTime(0.0001, t)
+        g.gain.exponentialRampToValueAtTime(0.22, t + 0.02)
+        g.gain.exponentialRampToValueAtTime(0.0001, t + dur)
+        o.start(t); o.stop(t + dur)
+      }
+      note(880, 0, 0.16); note(1318, 0.18, 0.22)
+    } catch (e) {}
+  }
+
+  // ---------- 角标 ----------
+  function updateBadge() {
+    var pending = todos.filter(function (t) { return !t.done })
+    var badge = $('todoBadge')
+    badge.style.display = pending.length > 0 ? '' : 'none'
+    badge.textContent = pending.length
+    badge.classList.toggle('alert', !!reminder)
   }
 
   // ---------- 聊天 ----------
@@ -646,9 +690,7 @@
       list.appendChild(dv)
       done.forEach(addItem)
     }
-    var badge = $('todoBadge')
-    badge.style.display = pending.length > 0 ? '' : 'none'
-    badge.textContent = pending.length
+    updateBadge()
   }
   function addTodo() {
     var title = $('todoTitle').value.trim()
@@ -675,7 +717,16 @@
     saveTodos()
     var t = due[due.length - 1]
     reminder = { id: t.id, title: t.title }
+    pet.setAttribute('data-reminder', 'on')
     showBubble('⏰ ' + t.title, 'reminder-bubble', openTodoView)
+    playChime()
+    if (repeatTimer) { clearInterval(repeatTimer); repeatTimer = null }
+    var n = 0
+    repeatTimer = setInterval(function () {
+      if (!reminder || ++n >= 3) { clearInterval(repeatTimer); repeatTimer = null; return }
+      playChime()
+    }, 30000)
+    updateBadge()
     if ('Notification' in window && Notification.permission === 'granted') {
       new Notification('⏰ TRAE 宝提醒', { body: t.title })
     } else if ('Notification' in window && Notification.permission === 'default') {

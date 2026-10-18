@@ -14,6 +14,8 @@ interface ChatPanelProps {
   todos: Todo[]
   onTodoToggle: (id: number) => void
   onTodoRemove: (id: number) => void
+  /** 有未查看的到期提醒时，角标跳动 */
+  reminderActive?: boolean
 }
 
 const STATUS_TEXT: Record<PetState, string> = {
@@ -49,7 +51,8 @@ export default function ChatPanel({
   onViewChange,
   todos,
   onTodoToggle,
-  onTodoRemove
+  onTodoRemove,
+  reminderActive
 }: ChatPanelProps) {
   const [input, setInput] = useState('')
   const listRef = useRef<HTMLDivElement>(null)
@@ -107,7 +110,9 @@ export default function ChatPanel({
             <rect x="3" y="3" width="14" height="14" rx="3" fill="none" stroke="currentColor" strokeWidth="1.6" />
             <path d="M6.5 10l2.2 2.2L14 7" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          {pendingCount > 0 && <span className="todo-badge">{pendingCount}</span>}
+          {pendingCount > 0 && (
+            <span className={`todo-badge${reminderActive ? ' alert' : ''}`}>{pendingCount}</span>
+          )}
         </button>
         <button className="chat-close" onClick={onClose} title="收起面板">
           −
